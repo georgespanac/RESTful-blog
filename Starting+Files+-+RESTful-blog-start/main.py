@@ -35,6 +35,7 @@ class BlogPost(db.Model):
     author = db.Column(db.String(250), nullable=False)
     img_url = db.Column(db.String(250), nullable=False)
 
+global posts
 posts = BlogPost.query.all()
 
 ##WTForm
@@ -52,11 +53,40 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts)
 
 
+@app.route('/edit_post/<int:post_id>', methods=["GET", "POST"])
+def edit_post(post_id):
+    post = BlogPost.query.get(post_id)
+    global posts
+    if post:
+        edit_form = CreatePostForm(
+            title=post.title,
+            subtitle=post.subtitle,
+            img_url=post.img_url,
+            author=post.author,
+            body=post.body
+        )
+        if edit_form.validate_on_submit():
+            post.title = edit_form.title.data
+            post.subtitle = edit_form.subtitle.data
+            post.img_url = edit_form.img_url.data
+            post.author = edit_form.author.data
+            post.body = edit_form.body.data
+            now = datetime.now()
+            now_formatted = now.strftime("%B %d, %Y")
+            post.date = now_formatted
+            db.session.commit()
+            posts = BlogPost.query.all()
+            return render_template("index.html", all_posts=posts)
+        else:
+            return render_template("make-post.html", form=edit_form)
+    else:
+        # 404
+        pass
+
 @app.route('/new_post', methods=["GET", "POST"])
 def add_new_post():
     form = CreatePostForm()
     if form.validate_on_submit():
-        db.create_all()
         now = datetime.now()
         now_formatted = now.strftime("%B %d, %Y")
         new_post = BlogPost(title=form.title.data, subtitle=form.subtitle.data,
@@ -73,7 +103,7 @@ date = now_formatted, body=form.body.data, author=form.author.data, img_url = fo
 def show_post(index):
     requested_post = None
     for blog_post in posts:
-        if blog_post["id"] == index:
+        if blog_post.id == index:
             requested_post = blog_post
     return render_template("post.html", post=requested_post)
 
