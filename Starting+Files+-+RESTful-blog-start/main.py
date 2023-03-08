@@ -83,6 +83,15 @@ def edit_post(post_id):
         # 404
         pass
 
+@app.route('/delete_post/<int:post_id>', methods=["GET"])
+def delete_post(post_id):
+    global posts
+    post = BlogPost.query.get(post_id)
+    db.session.delete(post)
+    db.session.commit()
+    posts = BlogPost.query.all()
+    return render_template("index.html", all_posts=posts)
+
 @app.route('/new_post', methods=["GET", "POST"])
 def add_new_post():
     form = CreatePostForm()
